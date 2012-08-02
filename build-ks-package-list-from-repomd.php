@@ -26,20 +26,41 @@ if (is_null($repomd_path)) {
 	exit(1);
 }
 
-$desired_groups = array('Base', 'Core');
+//$desired_groups = array('Base', 'Core');
 
 echo "%packages\n";
 $repomd = simplexml_load_file($repomd_path);
-foreach($repomd->group as $group) {
-	//if((string)$group->default == 'true') {
-	if (in_array((string)$group->name, $desired_groups)) {
-		//echo "@{$group->name}\n";
-		foreach($group->packagelist->packagereq as $packagereq) {
-			if ((string)$packagereq['type'] == 'mandatory') {
-				//echo "\t Package: ".$packagereq.' - '.$packagereq['type']."\n";
-				echo $packagereq."\n";
-			}
-		}
+$groups = $repomd->xpath('/comps/group[default=\'true\']');
+
+foreach($groups as $group) {
+	echo "#@{$group->name}\n";
+	
+	// list all mandatory packages for this group
+	echo "##{$group->name}: mandatory\n";
+	$mandatory = $group->xpath('packagelist/packagereq[@type=\'mandatory\']');
+	foreach($mandatory as $m) {
+		echo $m."\n";
+	}
+	
+	// list all default packages for this group
+	echo "##{$group->name}: default\n";
+	$default = $group->xpath('packagelist/packagereq[@type=\'default\']');
+	foreach($default as $d) {
+		echo "-$d\n";
+	}
+	
+	// list all optional packages for this group
+	echo "##{$group->name}: optional\n";
+	$optional = $group->xpath('packagelist/packagereq[@type=\'optional\']');
+	foreach($optional as $o) {
+		echo "-$o\n";
+	}
+	
+	// list all conditional packages for this group
+	echo "##{$group->name}: conditional\n";
+	$conditional = $group->xpath('packagelist/packagereq[@type=\'conditional\']');
+	foreach($conditional as $c) {
+		echo "-$c\n";
 	}
 }
 echo "%end\n";
